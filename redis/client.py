@@ -104,13 +104,14 @@ class Connection(object):
                     e.args[1])
         return ''
 
+
 def list_or_args(command, keys, args):
     # returns a single list combining keys and args
     # if keys is not a list or args has items, issue a
     # deprecation warning
     oldapi = bool(args)
     try:
-        i = iter(keys)
+        iter(keys)
         # a string can be iterated, but indicates
         # keys wasn't passed as a list
         if isinstance(keys, basestring):
@@ -126,6 +127,7 @@ def list_or_args(command, keys, args):
         keys.extend(args)
     return keys
 
+
 def timestamp_to_datetime(response):
     "Converts a unix timestamp to a Python datetime object"
     if not response:
@@ -136,17 +138,21 @@ def timestamp_to_datetime(response):
         return None
     return datetime.datetime.fromtimestamp(response)
 
+
 def string_keys_to_dict(key_string, callback):
     return dict([(key, callback) for key in key_string.split()])
+
 
 def dict_merge(*dicts):
     merged = {}
     [merged.update(d) for d in dicts]
     return merged
 
+
 def parse_info(response):
     "Parse the result of Redis's INFO command into a Python dict"
     info = {}
+
     def get_value(value):
         if ',' not in value:
             return value
@@ -158,6 +164,7 @@ def parse_info(response):
             except ValueError:
                 sub_dict[k] = v
         return sub_dict
+
     for line in response.splitlines():
         key, value = line.split(':')
         try:
@@ -166,9 +173,11 @@ def parse_info(response):
             info[key] = get_value(value)
     return info
 
+
 def pairs_to_dict(response):
     "Create a dict given a list of key/value pairs"
     return dict(zip(response[::2], response[1::2]))
+
 
 def zset_score_pairs(response, **options):
     """
@@ -179,10 +188,12 @@ def zset_score_pairs(response, **options):
         return response
     return zip(response[::2], map(float, response[1::2]))
 
+
 def int_or_none(response):
     if response is None:
         return None
     return int(response)
+
 
 def float_or_none(response):
     if response is None:
@@ -226,7 +237,8 @@ class Redis(threading.local):
         string_keys_to_dict('SDIFF SINTER SMEMBERS SUNION',
             lambda r: set(r)
             ),
-        string_keys_to_dict('ZRANGE ZRANGEBYSCORE ZREVRANGE', zset_score_pairs),
+        string_keys_to_dict('ZRANGE ZRANGEBYSCORE ZREVRANGE',
+                            zset_score_pairs),
         {
             'BGREWRITEAOF': lambda r: \
                 r == 'Background rewriting of AOF file started',
@@ -254,7 +266,8 @@ class Redis(threading.local):
         self.errors = errors
         self.connection = None
         self.subscribed = False
-        self.connection_pool = connection_pool and connection_pool or ConnectionPool()
+        self.connection_pool = connection_pool and connection_pool or \
+            ConnectionPool()
         self.select(db, host, port, password, socket_timeout)
 
     #### Legacty accessors of connection information ####
@@ -368,7 +381,7 @@ class Redis(threading.local):
                 return None
             if not catch_errors:
                 return [self._parse_response(command_name, catch_errors)
-                    for i in range(length)]
+                    for _ in xrange(length)]
             else:
                 # for pipelines, we need to read everything,
                 # including response errors. otherwise we'd
